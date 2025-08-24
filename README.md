@@ -1,7 +1,8 @@
 # RAG CSV Assistant
 
 A full-stack Retrieval-Augmented Generation (RAG) application that allows users to upload CSV files and ask questions about their data using Google's Gemini AI.
-
+# Preview
+![Alt text for the image](./Screenshot.png)
 ## Features
 
 - **CSV File Upload**: Drag-and-drop or click to upload CSV files
