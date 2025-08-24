@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG CSV Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: #f7fafc;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: #ebf8ff;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+        
+        .upload-btn:hover {
+            background: #5a67d8;
+        }
+        
+        .query-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .query-input {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .query-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .query-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+        
+        .query-btn:hover {
+            background: #38a169;
+        }
+        
+        .query-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+        
+        .response-area {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .response-area.show {
+            display: block;
+        }
+        
+        .response-content {
+            margin-bottom: 20px;
+        }
+        
+        .response-content h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .answer {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #48bb78;
+            margin-bottom: 20px;
+        }
+        
+        .sources {
+            background: #fff5f5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f56565;
+        }
+        
+        .sources h4 {
+            color: #c53030;
+            margin-bottom: 10px;
+        }
+        
+        .source-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .status-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .status-item {
+            display: inline-block;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .status-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .error-message {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>RAG CSV Assistant</h1>
+            <p>Upload CSV files and ask questions about your data using AI</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="card">
+                <h2>📁 Upload CSV Files</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div>
+                        <p>📄 Drag and drop CSV files here</p>
+                        <p>or</p>
+                        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                            Choose Files
+                        </button>
+                        <input type="file" id="fileInput" class="file-input" accept=".csv" multiple>
+                    </div>
+                </div>
+                <div class="success-message" id="uploadSuccess"></div>
+                <div class="error-message" id="uploadError"></div>
+                <div class="loading" id="uploadLoading">Processing CSV file...</div>
+            </div>
+            
+            <div class="card">
+                <h2>❓ Ask Questions</h2>
+                <form class="query-form" id="queryForm">
+                    <textarea 
+                        class="query-input" 
+                        id="queryInput" 
+                        placeholder="Ask questions about your CSV data...&#10;&#10;Examples:&#10;• What is the average value in column X?&#10;• How many rows contain Y?&#10;• What are the unique values in column Z?"
+                        required
+                    ></textarea>
+                    <button type="submit" class="query-btn" id="queryBtn">Ask Question</button>
+                </form>
+                <div class="loading" id="queryLoading">Generating answer...</div>
+            </div>
+            
+            <div class="response-area" id="responseArea">
+                <div class="response-content">
+                    <h3>Question:</h3>
+                    <p id="questionText"></p>
+                    
+                    <div class="answer">
+                        <h3>Answer:</h3>
+                        <div id="answerText"></div>
+                    </div>
+                    
+                    <div class="sources">
+                        <h4>Sources:</h4>
+                        <div id="sourcesText"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item status-success" id="systemStatus">System Ready</div>
+            <div class="status-item" id="documentsCount">Documents: 0</div>
+            <button class="upload-btn" onclick="resetDatabase()" style="margin-left: 20px;">Reset Database</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let systemReady = false;
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemStatus();
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // File upload events
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // Query form
+            document.getElementById('queryForm').addEventListener('submit', handleQuery);
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            processFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            processFiles(files);
+        }
+        
+        function processFiles(files) {
+            for (let file of files) {
+                if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                    uploadFile(file);
+                } else {
+                    showError('uploadError', 'Please select only CSV files.');
+                }
+            }
+        }
+        
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            showLoading('uploadLoading', true);
+            hideMessages();
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showSuccess('uploadSuccess', result.message + (result.details ? ` (${result.details})` : ''));
+                    checkSystemStatus(); // Update document count
+                } else {
+                    showError('uploadError', result.error || 'Upload failed');
+                }
+            } catch (error) {
+                showError('uploadError', 'Network error: ' + error.message);
+            } finally {
+                showLoading('uploadLoading', false);
+            }
+        }
+        
+        async function handleQuery(e) {
+            e.preventDefault();
+            
+            const queryInput = document.getElementById('queryInput');
+            const question = queryInput.value.trim();
+            
+            if (!question) {
+                showError('queryError', 'Please enter a question.');
+                return;
+            }
+            
+            showLoading('queryLoading', true);
+            document.getElementById('queryBtn').disabled = true;
+            
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayResponse(result);
+                } else {
+                    showError('queryError', result.error || 'Query failed');
+                }
+            } catch (error) {
+                showError('queryError', 'Network error: ' + error.message);
+            } finally {
+                showLoading('queryLoading', false);
+                document.getElementById('queryBtn').disabled = false;
+            }
+        }
+        
+        function displayResponse(result) {
+            document.getElementById('questionText').textContent = result.question;
+            document.getElementById('answerText').textContent = result.answer;
+            
+            const sourcesDiv = document.getElementById('sourcesText');
+            sourcesDiv.innerHTML = '';
+            
+            if (result.sources && result.sources.length > 0) {
+                result.sources.forEach(source => {
+                    const sourceDiv = document.createElement('div');
+                    sourceDiv.className = 'source-item';
+                    
+                    let sourceText = `File: ${source.source}`;
+                    if (source.row_index !== undefined) {
+                        sourceText += ` | Row: ${source.row_index}`;
+                    }
+                    if (source.column_name) {
+                        sourceText += ` | Column: ${source.column_name}`;
+                    }
+                    sourceText += ` | Type: ${source.type}`;
+                    
+                    sourceDiv.textContent = sourceText;
+                    sourcesDiv.appendChild(sourceDiv);
+                });
+            } else {
+                sourcesDiv.textContent = 'No specific sources identified';
+            }
+            
+            document.getElementById('responseArea').classList.add('show');
+        }
+        
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch('/status');
+                const status = await response.json();
+                
+                const systemStatusEl = document.getElementById('systemStatus');
+                const documentsCountEl = document.getElementById('documentsCount');
+                
+                if (status.rag_system_initialized && status.gemini_api_configured) {
+                    systemStatusEl.textContent = 'System Ready';
+                    systemStatusEl.className = 'status-item status-success';
+                    systemReady = true;
+                } else {
+                    systemStatusEl.textContent = 'System Not Ready';
+                    systemStatusEl.className = 'status-item status-error';
+                    systemReady = false;
+                }
+                
+                documentsCountEl.textContent = `Documents: ${status.documents_in_database || 0}`;
+                
+            } catch (error) {
+                console.error('Failed to check system status:', error);
+            }
+        }
+        
+        async function resetDatabase() {
+            if (!confirm('Are you sure you want to reset the database? This will delete all uploaded data.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/reset', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Database reset successfully');
+                    checkSystemStatus();
+                    document.getElementById('responseArea').classList.remove('show');
+                } else {
+                    alert('Failed to reset database: ' + result.error);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            }
+        }
+        
+        function showLoading(elementId, show) {
+            const element = document.getElementById(elementId);
+            element.style.display = show ? 'block' : 'none';
+        }
+        
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+        
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+        
+        function hideMessages() {
+            document.getElementById('uploadSuccess').style.display = 'none';
+            document.getElementById('uploadError').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
